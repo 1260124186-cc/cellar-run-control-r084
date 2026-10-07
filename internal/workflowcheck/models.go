@@ -28,6 +28,7 @@ type runView struct {
 	VesselID     *string                     `json:"vessel_id"`
 	Observations []domain.GravityObservation `json:"observations"`
 	Metrics      *domain.RunMetrics          `json:"metrics"`
+	EndedAt      *time.Time                  `json:"ended_at"`
 }
 
 type pairView struct {
@@ -73,10 +74,14 @@ func formulaStepPayload() map[string]any {
 }
 
 func createRunPayload(code, formulaID string) map[string]any {
+	return createRunPayloadWithVolume(code, formulaID, 180.0)
+}
+
+func createRunPayloadWithVolume(code, formulaID string, volume float64) map[string]any {
 	return map[string]any{
 		"code":                  code,
 		"formula_id":            formulaID,
-		"planned_volume_liters": 180.0,
+		"planned_volume_liters": volume,
 		"notes":                 "pilot run",
 	}
 }

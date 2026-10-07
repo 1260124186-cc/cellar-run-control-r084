@@ -178,41 +178,5 @@ func createStartedRun(
 	vesselID string,
 	code string,
 ) (pairView, error) {
-	runResponse, err := api.call("POST", "/v1/runs",
-		createRunPayload(code, formulaID), nil)
-	if err != nil {
-		return pairView{}, err
-	}
-	if err := requireStatus(runResponse, 201, "create check run"); err != nil {
-		return pairView{}, err
-	}
-	var run runView
-	if err := runResponse.decode(&run); err != nil {
-		return pairView{}, err
-	}
-	reserveResponse, err := api.call("POST", "/v1/runs/"+run.ID+"/reserve",
-		map[string]any{"vessel_id": vesselID}, ptrInt64(run.Version))
-	if err != nil {
-		return pairView{}, err
-	}
-	if err := requireStatus(reserveResponse, 200, "reserve check vessel"); err != nil {
-		return pairView{}, err
-	}
-	var reserved pairView
-	if err := reserveResponse.decode(&reserved); err != nil {
-		return pairView{}, err
-	}
-	startResponse, err := api.call("POST", "/v1/runs/"+run.ID+"/start",
-		nil, ptrInt64(reserved.Run.Version))
-	if err != nil {
-		return pairView{}, err
-	}
-	if err := requireStatus(startResponse, 200, "start check run"); err != nil {
-		return pairView{}, err
-	}
-	var started pairView
-	if err := startResponse.decode(&started); err != nil {
-		return pairView{}, err
-	}
-	return started, nil
+	return createStartedRunWithVolume(api, formulaID, vesselID, code, 180.0)
 }

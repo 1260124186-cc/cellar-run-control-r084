@@ -73,6 +73,7 @@ Formula workflow:
 - `PUT /v1/formulas/{id}/steps`
 - `POST /v1/formulas/{id}/approve`
 - `POST /v1/formulas/{id}/retire`
+- `GET /v1/formulas/{id}/run-comparison`
 
 Vessel workflow:
 
@@ -107,6 +108,27 @@ shape:
 }
 ```
 
+## Formula Run Comparison
+
+`GET /v1/formulas/{id}/run-comparison` aggregates the completed runs of one
+formula so production can compare actual outcomes without reading runs one by
+one:
+
+- `runs` lists each contributing run with planned volume, final gravity,
+  apparent attenuation, estimated alcohol, observation count, and completion
+  time, sorted deterministically by completion time, then run code, then run
+  identifier. Metric values are copied from the stored run metrics, so every
+  entry matches `GET /v1/runs/{id}`.
+- `summary` totals and averages the listed entries with the same rounding
+  rule as run metrics.
+- `excluded_runs` lists every other run of the formula with a reason
+  (`run_not_completed` or `incomplete_metrics`); runs that are unfinished or
+  carry missing or inconsistent metrics never mix into the statistics
+  silently.
+- `revision` is the snapshot revision the response was computed from. The
+  comparison is rebuilt from the persisted snapshot on every request, so a
+  restarted process answers identically for unchanged data.
+
 ## Workflow Checks
 
 Run each production workflow check separately:
@@ -115,11 +137,14 @@ Run each production workflow check separately:
 go run ./cmd/fermentctl check formula-approval
 go run ./cmd/fermentctl check vessel-run-lifecycle
 go run ./cmd/fermentctl check observations-completion
+go run ./cmd/fermentctl check formula-run-comparison
 ```
 
 Each check creates a temporary snapshot directory, starts the real HTTP
 handler on a loopback listener, issues JSON requests, verifies success and
-failure behavior, and removes its temporary data.
+failure behavior, and removes its temporary data. The comparison check
+additionally restarts the process on the same snapshot and verifies the
+aggregated response is byte-for-byte stable.
 
 ## Persistence And Recovery
 

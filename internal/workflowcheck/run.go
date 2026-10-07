@@ -40,6 +40,21 @@ func Run(name string) error {
 		if err := observationsCompletion(api); err != nil {
 			return err
 		}
+	case "formula-run-comparison":
+		snapshot, err := formulaRunComparison(api)
+		if err != nil {
+			return err
+		}
+		server.Close()
+		reopened, err := storage.Open(dataDir)
+		if err != nil {
+			return err
+		}
+		server = httptest.NewServer(httpapi.NewHandler(service.New(reopened, clock.System{})))
+		defer server.Close()
+		if err := verifyComparisonAfterRestart(newClient(server.URL), snapshot); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unknown workflow check %q", name)
 	}

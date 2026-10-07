@@ -150,6 +150,25 @@ transitions return stable failures without changing persisted state.
 This path crosses HTTP protocol handling, application orchestration, numeric
 domain rules, and snapshot storage.
 
+### 4. Formula Run Comparison
+
+Public entry point:
+
+- `GET /v1/formulas/{id}/run-comparison`
+
+The client reads a per-formula comparison of completed runs: planned volume,
+final gravity, apparent attenuation, and estimated alcohol for each
+contributing run, plus deterministic totals and averages. Entries are sorted
+by completion time, run code, and run identifier. Runs that are not completed
+or whose metrics are missing or inconsistent with their observations are
+listed under `excluded_runs` with a reason instead of mixing into the
+statistics. The response carries the snapshot revision and run identifiers so
+every aggregate traces back to the run detail endpoints, and a restarted
+process answers identically for unchanged data.
+
+This path crosses HTTP protocol handling, application orchestration, numeric
+domain rules, and snapshot storage.
+
 ## Modules
 
 - `cmd/fermentctl`: executable entry point for the HTTP service and bounded
@@ -217,6 +236,7 @@ behavior, and exit without external services:
 - `go run ./cmd/fermentctl check formula-approval`
 - `go run ./cmd/fermentctl check vessel-run-lifecycle`
 - `go run ./cmd/fermentctl check observations-completion`
+- `go run ./cmd/fermentctl check formula-run-comparison`
 
 ## Scope Limits
 
