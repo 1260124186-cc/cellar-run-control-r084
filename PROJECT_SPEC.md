@@ -150,6 +150,26 @@ transitions return stable failures without changing persisted state.
 This path crosses HTTP protocol handling, application orchestration, numeric
 domain rules, and snapshot storage.
 
+### 4. Formula Run Comparison
+
+Public entry points are:
+
+- `GET /v1/formulas/{id}/run-comparison`
+- `GET /v1/runs/{id}`
+
+The client reads a deterministic ranking of the completed runs of one formula
+with planned volume, final gravity, apparent attenuation, and estimated
+alcohol per run, plus min, max, and average summaries. The `sort` parameter
+selects the ranking metric and `direction` its order; invalid values return
+stable errors. Runs that are not completed or lack calculated metrics are
+reported under `excluded_runs` with their reason instead of leaking into the
+statistics. Every ranked value traces back to the run detail read, and the
+response is identical after a restart.
+
+This path crosses HTTP protocol handling, query validation, application
+orchestration, deterministic ordering and aggregation rules, and snapshot
+storage.
+
 ## Modules
 
 - `cmd/fermentctl`: executable entry point for the HTTP service and bounded
@@ -210,13 +230,14 @@ task owns systematic tests for validation boundaries, state transitions,
 numeric calculations, stale revisions, storage failures, and concurrent
 reservation attempts.
 
-The current build command is `go build ./...`. Three bounded production checks
+The current build command is `go build ./...`. Four bounded production checks
 start the real HTTP handler, issue real JSON requests, check success and failure
 behavior, and exit without external services:
 
 - `go run ./cmd/fermentctl check formula-approval`
 - `go run ./cmd/fermentctl check vessel-run-lifecycle`
 - `go run ./cmd/fermentctl check observations-completion`
+- `go run ./cmd/fermentctl check formula-run-comparison`
 
 ## Scope Limits
 

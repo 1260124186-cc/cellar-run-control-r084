@@ -61,6 +61,33 @@ func registerFormulaRoutes(mux *http.ServeMux, app *service.Service) {
 		writeJSON(response, http.StatusOK, formula)
 	})
 
+	mux.HandleFunc("GET /v1/formulas/{id}/run-comparison", func(response http.ResponseWriter, request *http.Request) {
+		field := domain.DefaultComparisonSortField
+		if raw := request.URL.Query().Get("sort"); raw != "" {
+			parsed, err := domain.ParseComparisonSortField(raw)
+			if err != nil {
+				writeDomainError(response, err)
+				return
+			}
+			field = parsed
+		}
+		direction := domain.DefaultSortDirection
+		if raw := request.URL.Query().Get("direction"); raw != "" {
+			parsed, err := domain.ParseSortDirection(raw)
+			if err != nil {
+				writeDomainError(response, err)
+				return
+			}
+			direction = parsed
+		}
+		comparison, err := app.CompareFormulaRuns(request.PathValue("id"), field, direction)
+		if err != nil {
+			writeDomainError(response, err)
+			return
+		}
+		writeJSON(response, http.StatusOK, comparison)
+	})
+
 	mux.HandleFunc("PUT /v1/formulas/{id}/steps", func(response http.ResponseWriter, request *http.Request) {
 		body, err := decodeJSON[setStepsRequest](response, request)
 		if !handleDecode(response, err) {

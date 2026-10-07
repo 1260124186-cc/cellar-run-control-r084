@@ -18,14 +18,20 @@ func Run(name string) error {
 	}
 	defer os.RemoveAll(dataDir)
 
-	store, err := storage.Open(dataDir)
+	if name == "formula-run-comparison" {
+		if err := formulaRunComparison(dataDir); err != nil {
+			return err
+		}
+		fmt.Printf("workflow check passed: %s\n", name)
+		return nil
+	}
+
+	server, err := startCheckServer(dataDir)
 	if err != nil {
 		return err
 	}
-	app := service.New(store, clock.System{})
-	server := httptest.NewServer(httpapi.NewHandler(app))
-	defer server.Close()
-	api := newClient(server.URL)
+	defer server.close()
+	api := newClient(server.url)
 
 	switch name {
 	case "formula-approval":
@@ -45,4 +51,23 @@ func Run(name string) error {
 	}
 	fmt.Printf("workflow check passed: %s\n", name)
 	return nil
+}
+
+type checkServer struct {
+	server *httptest.Server
+	url    string
+}
+
+func startCheckServer(dataDir string) (*checkServer, error) {
+	store, err := storage.Open(dataDir)
+	if err != nil {
+		return nil, err
+	}
+	app := service.New(store, clock.System{})
+	server := httptest.NewServer(httpapi.NewHandler(app))
+	return &checkServer{server: server, url: server.URL}, nil
+}
+
+func (c *checkServer) close() {
+	c.server.Close()
 }

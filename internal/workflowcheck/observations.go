@@ -178,8 +178,15 @@ func createStartedRun(
 	vesselID string,
 	code string,
 ) (pairView, error) {
-	runResponse, err := api.call("POST", "/v1/runs",
-		createRunPayload(code, formulaID), nil)
+	return startRunWithPayload(api, createRunPayload(code, formulaID), vesselID)
+}
+
+func startRunWithPayload(
+	api *client,
+	payload map[string]any,
+	vesselID string,
+) (pairView, error) {
+	runResponse, err := api.call("POST", "/v1/runs", payload, nil)
 	if err != nil {
 		return pairView{}, err
 	}

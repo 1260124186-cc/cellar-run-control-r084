@@ -70,6 +70,7 @@ Formula workflow:
 - `POST /v1/formulas`
 - `GET /v1/formulas`
 - `GET /v1/formulas/{id}`
+- `GET /v1/formulas/{id}/run-comparison`
 - `PUT /v1/formulas/{id}/steps`
 - `POST /v1/formulas/{id}/approve`
 - `POST /v1/formulas/{id}/retire`
@@ -107,6 +108,27 @@ shape:
 }
 ```
 
+## Formula Run Comparison
+
+`GET /v1/formulas/{id}/run-comparison` ranks the completed runs of one formula
+so the production team can compare actual outcomes without reading each run
+individually. Each ranked entry carries the run identifier and code, planned
+volume, final gravity, apparent attenuation, estimated alcohol, observation
+count, and completion time, so every value traces back to `GET /v1/runs/{id}`.
+A summary reports the run count plus min, max, and average for each metric.
+
+Only completed runs with calculated metrics are ranked or aggregated. Every
+other run of the formula is listed under `excluded_runs` with an explicit
+reason (`not_completed`, `aborted`, or `missing_metrics`), so incomplete data
+never leaks silently into the statistics.
+
+Ordering is deterministic. The `sort` query parameter accepts `volume`,
+`final_gravity`, `apparent_attenuation` (default), or `alcohol_abv`, and
+`direction` accepts `asc` or `desc` (default). Ties break by run code and then
+run identifier. Unknown values are rejected with `invalid_input`. Because the
+comparison is derived from the persisted snapshot, a restart does not change
+the response.
+
 ## Workflow Checks
 
 Run each production workflow check separately:
@@ -115,6 +137,7 @@ Run each production workflow check separately:
 go run ./cmd/fermentctl check formula-approval
 go run ./cmd/fermentctl check vessel-run-lifecycle
 go run ./cmd/fermentctl check observations-completion
+go run ./cmd/fermentctl check formula-run-comparison
 ```
 
 Each check creates a temporary snapshot directory, starts the real HTTP
